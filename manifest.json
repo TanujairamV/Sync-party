@@ -1,0 +1,15 @@
+{
+  "name": "Spicetify Jam",
+  "version": "1.0.0",
+  "description": "Real-time social listening sessions. Sync Spotify playback with friends via P2P — shared queue, live avatars, and instant sync.",
+  "main": "dist/spicetify-jam.js",
+  "preview": "assets/logo.png",
+  "readme": "README.md",
+  "authors": [
+    {
+      "name": "Kyzenkms",
+      "url": "https://github.com/Kyzenkms"
+    }
+  ],
+  "tags": ["social", "sync", "listening", "friends", "p2p", "queue", "social-listening"]
+}
