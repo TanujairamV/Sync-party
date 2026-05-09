@@ -148,6 +148,10 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const songDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
     const seekTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
     const ctxMenuItem = useRef<any>(null);
+    const pendingQueueRestore = useRef<TrackInfo[]>([]);
+    const queueRef = useRef<TrackInfo[]>([]);
+
+    useEffect(() => { queueRef.current = queue; }, [queue]);
 
     useEffect(() => { refs.current.isHost = isHost; }, [isHost]);
     useEffect(() => { refs.current.connected = connected; }, [connected]);
@@ -262,9 +266,19 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, [broadcast, hostConn]);
 
     const jumpToTrack = useCallback((uri: string) => {
-        if (refs.current.isHost) { refs.current.targetUri = uri; Spicetify.Player.playUri(uri); }
+        if (refs.current.isHost) {
+            refs.current.targetUri = uri;
+            const idx = queue.findIndex(t => t.uri === uri);
+            if (idx >= 0) {
+                pendingQueueRestore.current = queue.slice(idx + 1);
+                const newQueue = queue.slice(idx + 1);
+                setQueue(newQueue);
+                broadcast({ type: 'Q', queue: newQueue });
+            }
+            Spicetify.Player.playUri(uri);
+        }
         else if (refs.current.guestControls) { const c = hostConn(); c?.send({ type: 'CMD', a: 'playuri', uri }); }
-    }, [hostConn]);
+    }, [hostConn, queue, broadcast]);
 
     const toggleGuestControls = () => { if (!isHost) return; const v = !guestControls; setGuestControls(v); broadcast({ type: 'GCTRL', on: v }); };
     const play = () => { if (refs.current.isHost) { Spicetify.Player.play(); setIsPlaying(true); } else if (refs.current.guestControls) { const c = hostConn(); c?.send({ type: 'CMD', a: 'play' }); } };
@@ -282,6 +296,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (songDebounce.current) { clearTimeout(songDebounce.current); songDebounce.current = null; }
         seekTimers.current.forEach(clearTimeout); seekTimers.current = [];
         cmdThrottle.current.clear();
+        pendingQueueRestore.current = [];
     }, []);
 
     const kickMember = (id: string) => {
@@ -324,7 +339,16 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (d.a === 'play') Spicetify.Player.play(); else if (d.a === 'pause') Spicetify.Player.pause();
                 else if (d.a === 'next') Spicetify.Player.next(); else if (d.a === 'back') Spicetify.Player.back();
                 else if (d.a === 'seek') Spicetify.Player.seek(d.pos);
-                else if (d.a === 'playuri') { refs.current.targetUri = d.uri; Spicetify.Player.playUri(d.uri); }
+                else if (d.a === 'playuri') {
+                    const idx = queueRef.current.findIndex(t => t.uri === d.uri);
+                    if (idx >= 0) {
+                        pendingQueueRestore.current = queueRef.current.slice(idx + 1);
+                        const newQueue = queueRef.current.slice(idx + 1);
+                        setQueue(newQueue);
+                        broadcast({ type: 'Q', queue: newQueue });
+                    }
+                    refs.current.targetUri = d.uri; Spicetify.Player.playUri(d.uri);
+                }
                 break;
             case 'KICK': leaveJam(); setError('Removed from Jam'); Spicetify.showNotification('Kicked from Jam'); break;
             case 'PLAY':
@@ -449,7 +473,18 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (refs.current.isHost) {
                 const t = getTrack(); if (t) setNowPlaying(t);
                 refs.current.targetUri = uri || null; broadcast({ type: 'PLAY', uri: uri || '', pos: 0, ts: Date.now(), np: t });
-                setTimeout(refreshQueue, 600);
+                if (pendingQueueRestore.current.length > 0) {
+                    const restore = pendingQueueRestore.current;
+                    pendingQueueRestore.current = [];
+                    (async () => {
+                        for (const tr of restore) {
+                            if (tr.uri) { try { await Spicetify.addToQueue([{ uri: tr.uri }]); } catch {} }
+                        }
+                        setTimeout(refreshQueue, 1000);
+                    })();
+                } else {
+                    setTimeout(refreshQueue, 600);
+                }
             } else {
                 if (refs.current.ignoreSync) { refs.current.ignoreSync = false; return; }
                 if (uri && uri !== refs.current.targetUri && refs.current.targetUri) {
