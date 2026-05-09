@@ -149,7 +149,6 @@ src/events/
 src/Models/
 src/utils/
 src/client.mjs
-src/settings.json
 index.js
 Assets/Global/
 Assets/Locales/
