@@ -37,12 +37,11 @@ Before installing Spicetify Jam, make sure you have [Spicetify](https://spicetif
 Open PowerShell and run the following commands:
 
 ```powershell
-cd "$env:APPDATA\spicetify\CustomApps"
-git clone https://github.com/Kyzenkms/spicetify-jam jam
-cd jam
+git clone https://github.com/Kyzenkms/spicetify-jam
+cd spicetify-jam
 npm install
 npm run build
-spicetify config custom_apps jam
+spicetify config extensions spicetify-jam.js
 spicetify apply
 ```
 
@@ -51,12 +50,11 @@ spicetify apply
 Open your Terminal and run the following commands:
 
 ```bash
-cd "$(spicetify -c | grep custom_apps_path | cut -d= -f2)"
-git clone https://github.com/Kyzenkms/spicetify-jam jam
-cd jam
+git clone https://github.com/Kyzenkms/spicetify-jam
+cd spicetify-jam
 npm install
 npm run build
-spicetify config custom_apps jam
+spicetify config extensions spicetify-jam.js
 spicetify apply
 ```
 
