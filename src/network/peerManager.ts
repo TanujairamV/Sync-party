@@ -212,10 +212,17 @@ export const joinJam = async (params: {
 
             console.log('[GUEST] connect() called')
             console.log('[GUEST] Connecting to:', cleanId)
+            console.log('[GUEST] Connection object:', conn)
+            console.log('[GUEST] conn.open:', conn.open)
+            console.log('[GUEST] local peer id:', p.id)
+
+            setTimeout(() => {
+                console.log('[GUEST] After 2s conn.open:', conn.open)
+                console.log('[GUEST] After 2s peer id:', p.id)
+            }, 2000)
 
             conn.on('open', () => {
                 console.log('[GUEST] CONNECTION ESTABLISHED')
-
                 settle(() => {
                     params.conns.current.set(cleanId, conn)
 
