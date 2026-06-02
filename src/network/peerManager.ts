@@ -209,7 +209,26 @@ export const joinJam = async (params: {
             const conn = p.connect(cleanId, {
                 reliable: true
             })
+            const iceLogger = setInterval(() => {
+                try {
+                    const pc = (conn as any)?._negotiator?._pc
 
+                    if (!pc) {
+                        console.log('[GUEST ICE] No RTCPeerConnection yet')
+                        return
+                    }
+
+                    console.log('[GUEST ICE]', {
+                        connectionState: pc.connectionState,
+                        iceConnectionState: pc.iceConnectionState,
+                        iceGatheringState: pc.iceGatheringState,
+                        signalingState: pc.signalingState
+                    })
+                } catch (e) {
+                    console.error('[GUEST ICE] Error', e)
+                }
+            }, 2000)
+            
             console.log('[GUEST] connect() called')
             console.log('[GUEST] Connecting to:', cleanId)
             console.log('[GUEST] Connection object:', conn)
