@@ -88,6 +88,13 @@ export const createHost = async (
 
     await signaling.waitForClientId()
 
+    signaling.onPeerJoined(peerId => {
+        console.log(
+            '[WEBRTC] Guest joined',
+            peerId
+        )
+    })
+
     pc.onicecandidate = e => {
         if (!e.candidate) return
 

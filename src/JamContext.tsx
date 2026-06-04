@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
-import Peer, { DataConnection } from 'peerjs'
 import { TrackInfo, Member, JamState } from './types/jam'
 import { fetchUserAsync, getTrack, getQueue } from './spotify/player'
 import { setupConn as networkSetupConn, startJam as networkStartJam, joinJam as networkJoinJam } from './network/peerManager'
+import { WebRTCPeerManager } from './network/WebRTCPeerManager'
 import { onData as handlePeerData } from './network/messageHandlers'
 
 const Ctx = createContext<JamState | undefined>(undefined)
@@ -24,6 +24,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [updateAvailable, setUpdateAvailable] = useState(false)
 
     const peerRef = useRef<Peer | null>(null)
+
     const conns = useRef<Map<string, DataConnection>>(new Map())
     const memberRegistry = useRef<Map<string, { name: string; image: string }>>(new Map())
     const cachedUser = useRef<{ name: string; image: string }>({ name: 'Listener', image: '' })
