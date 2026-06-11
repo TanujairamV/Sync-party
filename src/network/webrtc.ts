@@ -215,13 +215,61 @@ export const createHost = async (
 
                 if (!pc) {
                     pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
-                    pc.ondatachannel = e => {
+                    const pcRef = pc
+                    
+                    pcRef.onconnectionstatechange = () => {
+                        console.log(
+                            '[HOST PC]',
+                            pcRef.connectionState
+                        )
+                    }
+                    
+                    pcRef.onicegatheringstatechange = () => {
+                        console.log(
+                            "[HOST GATHER]",
+                            pcRef.iceGatheringState
+                        )
+                    }
+                    
+                    pcRef.onicecandidateerror = e => {
+                        console.log(
+                            "[HOST ICE ERROR]",
+                            e
+                        )
+                    }
+                    
+                    pcRef.oniceconnectionstatechange = () => {
+                        console.log(
+                            '[HOST ICE STATE]',
+                            pcRef.iceConnectionState
+                        )
+                    }
+                    
+                    pcRef.ondatachannel = e => {
+                        e.channel.onopen = () => {
+                            console.log(
+                                '[HOST] DataChannel OPEN',
+                                msg.sender
+                            )
+                        }
+                        e.channel.onclose = () => {
+                            console.log(
+                                '[HOST] DataChannel CLOSE',
+                                msg.sender
+                            )
+                        }
                         const conn = new WebRTCConnection(msg.sender, e.channel)
-                        manager.addConnection(msg.sender, conn, pc)
+                        manager.addConnection(msg.sender, conn, pcRef)
                         onConnection(conn)
                     }
-                    pc.onicecandidate = e => {
-                        if (!e.candidate) return
+                    
+                    pcRef.onicecandidate = e => {
+                        if (!e.candidate) {
+                            console.log(
+                                "[HOST ICE] COMPLETE"
+                            )
+                            return
+                        }
                         manager.signaling.send({
                             sender: manager.signaling.clientId,
                             target: msg.sender,
@@ -261,6 +309,20 @@ export const createHost = async (
             )
         }
 
+        pc.onicegatheringstatechange = () => {
+            console.log(
+                "[HOST GATHER]",
+                pc.iceGatheringState
+            )
+        }
+
+        pc.onicecandidateerror = e => {
+            console.log(
+                "[HOST ICE ERROR]",
+                e
+            )
+        }
+
         pc.oniceconnectionstatechange = () => {
             console.log(
                 '[HOST ICE STATE]',
@@ -288,7 +350,12 @@ export const createHost = async (
         onConnection(conn)
 
         pc.onicecandidate = e => {
-            if (!e.candidate) return
+            if (!e.candidate) {
+                console.log(
+                    "[HOST ICE] COMPLETE"
+                )
+                return
+            }
 
             console.log(
                 '[HOST ICE]',
@@ -368,6 +435,20 @@ export const joinHost = async (
                 pc.connectionState
             )
         }
+        
+        pc.onicegatheringstatechange = () => {
+            console.log(
+                "[GUEST GATHER]",
+                pc.iceGatheringState
+            )
+        }
+
+        pc.onicecandidateerror = e => {
+            console.log(
+                "[GUEST ICE ERROR]",
+                e
+            )
+        }
 
         pc.oniceconnectionstatechange = () => {
             console.log(
@@ -378,7 +459,12 @@ export const joinHost = async (
         manager.addConnection(id, deferred, pc)
 
         pc.onicecandidate = e => {
-            if (!e.candidate) return
+            if (!e.candidate) {
+                console.log(
+                    "[GUEST ICE] COMPLETE"
+                )
+                return
+            }
 
             console.log(
                 '[GUEST ICE]',
