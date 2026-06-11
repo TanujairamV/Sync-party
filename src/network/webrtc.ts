@@ -373,9 +373,19 @@ export const joinHost = async (
 
             if (msg.type === 'candidate' && msg.sender === hostId) {
                 const pc = manager.getPeerConnection(hostId)
+
                 if (!pc) return
 
-                await pc.addIceCandidate(msg.candidate)
+                if (!pc.remoteDescription) {
+                    console.log(
+                        '[GUEST] Ignoring early ICE'
+                    )
+                    return
+                }
+
+                await pc.addIceCandidate(
+                    msg.candidate
+                )
             }
         }
     )
