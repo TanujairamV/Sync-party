@@ -2,21 +2,32 @@ import { JamConnection } from './types'
 import { WebRTCPeerManager } from './WebRTCPeerManager'
 import { SignalingClient } from './signaling'
 
-const ICE_SERVERS = [
+export const ICE_SERVERS: RTCIceServer[] = [
     {
         urls: [
             "stun:stun.l.google.com:19302",
-            "stun:openrelay.metered.ca:80"
+            "stun:stun.relay.metered.ca:80"
         ]
     },
     {
-        urls: [
-            "turn:openrelay.metered.ca:80",
-            "turn:openrelay.metered.ca:443",
-            "turn:openrelay.metered.ca:443?transport=tcp"
-        ],
-        username: "openrelayproject",
-        credential: "openrelayproject"
+        urls: "turn:global.relay.metered.ca:80",
+        username: "855afddb586aeb45ff1d8548",
+        credential: "FPSBc6fiSuioTE5V"
+    },
+    {
+        urls: "turn:global.relay.metered.ca:80?transport=tcp",
+        username: "855afddb586aeb45ff1d8548",
+        credential: "FPSBc6fiSuioTE5V"
+    },
+    {
+        urls: "turn:global.relay.metered.ca:443",
+        username: "855afddb586aeb45ff1d8548",
+        credential: "FPSBc6fiSuioTE5V"
+    },
+    {
+        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+        username: "855afddb586aeb45ff1d8548",
+        credential: "FPSBc6fiSuioTE5V"
     }
 ]
 
