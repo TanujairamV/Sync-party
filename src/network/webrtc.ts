@@ -59,7 +59,7 @@ class DeferredWebRTCConnection implements JamConnection {
     }
 
     get open(): boolean {
-        return this.channel?.readyState === 'open' ?? false
+        return this.channel ? this.channel.readyState === 'open' : false
     }
 
     send(data: any): void {
@@ -161,6 +161,11 @@ export const createHost = async (
             if (msg.sender === manager.signaling.clientId) return
 
             if (msg.type === 'answer') {
+                console.log(
+                    '[HOST] Answer received from',
+                    msg.sender
+                )
+
                 const pc = manager.getPeerConnection(msg.sender)
                 if (pc) {
                     await pc.setRemoteDescription(msg.answer)
@@ -212,6 +217,10 @@ export const createHost = async (
     await manager.signaling.waitForClientId()
 
     manager.signaling.onPeerJoined(async peerId => {
+            console.log(
+                '[HOST] Creating RTC for',
+                peerId
+            )
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
         const channel = pc.createDataChannel('jam')
         const conn = new WebRTCConnection(peerId, channel)
@@ -220,6 +229,10 @@ export const createHost = async (
         onConnection(conn)
 
         pc.onicecandidate = e => {
+            console.log(
+                '[HOST ICE]',
+                e.candidate?.candidate
+            )
             if (!e.candidate) return
             manager.signaling.send({
                 sender: manager.signaling.clientId,
@@ -231,6 +244,10 @@ export const createHost = async (
 
         const offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
+            console.log(
+                '[HOST] Sending offer to',
+             peerId
+         )
 
         manager.signaling.send({
             sender: manager.signaling.clientId,

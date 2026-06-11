@@ -1,4 +1,6 @@
 
+declare module '*.css';
+
 import React from 'react';
 import { JamProvider } from './JamContext';
 import JamMenu from './components/JamMenu';
