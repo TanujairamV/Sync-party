@@ -1,10 +1,10 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/Kyzenkms/spicetify-jam/main/assets/logo.png" alt="Spicetify Jam Banner" width="100%" />
 
-  <h1>🎵 Spicetify Jam</h1>
+<h1>🎵 Spicetify Jam</h1>
   <p><b>Real-time social listening sessions for Spotify (via Spicetify)</b></p>
-  
-  <p>
+
+<p>
     <img src="https://img.shields.io/badge/version-1.0.0-1db954?style=for-the-badge&logo=spotify" alt="Version 1.0.0" />
     <img src="https://img.shields.io/badge/spicetify-custom%20app-1db954?style=for-the-badge" alt="Spicetify App" />
     <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License" />
@@ -37,7 +37,9 @@ Before installing Spicetify Jam, make sure you have [Spicetify](https://spicetif
 Open PowerShell and run the following commands:
 
 ```powershell
-git clone https://github.com/Kyzenkms/spicetify-jam
+winget install --id Git.Git -e --source winget
+winget install OpenJS.NodeJS.LTS
+git clone https://github.com/TanujairamV/spicetify-jam
 cd spicetify-jam
 npm install
 npm run build
@@ -50,7 +52,7 @@ spicetify apply
 Open your Terminal and run the following commands:
 
 ```bash
-git clone https://github.com/Kyzenkms/spicetify-jam
+git clone https://github.com/TanujairamV/spicetify-jam
 cd spicetify-jam
 npm install
 npm run build
@@ -63,12 +65,14 @@ spicetify apply
 ## 🎮 How to Use
 
 ### As a Host
+
 1. Open Spotify and click the **Jam icon** on the bottom-right of your player bar.
 2. The Jam Sidebar will slide open. Click **Start a new Jam**.
 3. Share the **6-character Session ID**, the **QR Code**, or the **Join Link** with your friends.
 4. Add songs to the queue natively through Spotify by right-clicking a track and selecting **"Add to Jam"**, or control it directly from the sidebar.
 
 ### As a Guest
+
 1. Open Spotify and click the **Jam icon** in your player bar.
 2. Enter the host's **Session ID** or click their **Join Link**.
 3. Sit back and enjoy! You are now strictly synced to the host. If you pause, the extension will let you know you're falling behind. Hitting play again will instantly jump you to the correct live playback time.
