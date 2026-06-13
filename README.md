@@ -1,5 +1,3 @@
-<div align="center">
-
 # 🎵 Sync Party
 
 <div align="center">
