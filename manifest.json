@@ -1,7 +1,7 @@
 {
   "name": "Sync Party",
   "description": "Listen to Spotify together with friends in real time.",
-  "preview": "screenshot.png",
+  "preview": "./assets/image.png",
   "main": "sync-party.js",
   "readme": "README.md",
   "authors": [

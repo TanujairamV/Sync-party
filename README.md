@@ -3,7 +3,7 @@
 # 🎵 Sync Party
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/TanujairamV/spicetify-jam/main/assets/logo.png" alt="Spicetify Jam Banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/TanujairamV/spicetify-jam/main/assets/logo.png" alt="Spicetify Jam Banner" width="32%" />
 
 <p align="center">
   <img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=30&pause=1200&color=1db954&center=true&vCenter=true&width=900&lines=Real+time+listening+sessions+for+Spotify;Listen+with+your+friends" />
