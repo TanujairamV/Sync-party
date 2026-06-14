@@ -1,10 +1,7 @@
-
-declare module '*.css';
-
 import React from 'react';
 import { JamProvider } from './JamContext';
 import JamMenu from './components/JamMenu';
-import './styles.css';
+import './components/styles.css';
 
 async function main() {
   while (!Spicetify?.showNotification || !Spicetify?.Platform) {

@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { TrackInfo, Member, JamState } from './types/jam'
-import { fetchUserAsync, getTrack, getQueue } from './spotify/player'
+import { fetchUserAsync, getTrack, getQueue } from './spotify/api'
 import { setupConn as networkSetupConn, startJam as networkStartJam, joinJam as networkJoinJam } from './network/peerManager'
 import { WebRTCPeerManager } from './network/WebRTCPeerManager'
 import { onData as handlePeerData } from './network/messageHandlers'
-import { JamConnection } from './network/types'
+import { JamConnection } from './types/types'
 
 const Ctx = createContext<JamState | undefined>(undefined)
 
@@ -142,7 +142,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 type: "Q",
                 queue: q
             })
-        },[broadcast]
+        }, [broadcast]
     )
 
     const jumpToTrack = useCallback((uri: string) => {
@@ -175,7 +175,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const pause = () => {
         if (refs.current.isHost) {
             Spicetify.Player.pause()
-            
+
         } else if (refs.current.guestControls) {
             const c = hostConn()
             if (c?.open) c.send({ type: 'CMD', a: 'pause' })
@@ -307,7 +307,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refs.current.connected = true
 
         setIsHost(true)
-        setConnected(true) 
+        setConnected(true)
         const p = await networkStartJam({
             retries,
             userPromise,
@@ -361,12 +361,12 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     if (d !== duration) {
                         setDuration(d)
                     }
-                } catch {}
+                } catch { }
             } else if (refs.current.connected) {
                 try {
                     setProgress(Spicetify.Player.getProgress())
                     setDuration(Spicetify.Player.getDuration())
-                } catch {}
+                } catch { }
                 const c = hostConn()
                 if (c?.open) c.send({ type: 'PING', ts: Date.now() })
                 if (lastHostMsg.current > 0 && Date.now() - lastHostMsg.current > 10000) {
@@ -396,7 +396,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         const c = hostConn()
                         if (c?.open) c.send({ type: 'SYNC' })
                     }
-                } catch {}
+                } catch { }
             }
         }, 1000)
         return () => clearInterval(id)
@@ -441,7 +441,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         (async () => {
                             for (const tr of restore) {
                                 if (tr.uri) {
-                                    try { await Spicetify.addToQueue([{ uri: tr.uri }]) } catch {}
+                                    try { await Spicetify.addToQueue([{ uri: tr.uri }]) } catch { }
                                 }
                             }
                             setTimeout(refreshQueue, 1000)
@@ -494,7 +494,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     type: 'PS',
                     p: playing,
                     pos,
-                    dur 
+                    dur
                 })
 
                 if (!playing) {
@@ -519,7 +519,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         refs.current.forcingPause = true
                         Spicetify.Player.pause()
                         Spicetify.showNotification('🔒 Only the host can resume playback')
-                        
+
                         setTimeout(() => { refs.current.forcingPause = false }, 500)
 
                         const c = hostConn()
@@ -547,8 +547,8 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
                             Spicetify.Player.playUri(
                                 refs.current.targetUri).catch(() => {
-                                refs.current.ignoreSync = false
-                            })
+                                    refs.current.ignoreSync = false
+                                })
                             Spicetify.showNotification('🔒 Locked to Jam')
                         }
                     }
@@ -572,7 +572,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (c?.open) c.send({ type: 'SYNC' })
         }, 15000) : null
         try {
-            if (ctxMenuItem.current) { try { ctxMenuItem.current.deregister() } catch {} }
+            if (ctxMenuItem.current) { try { ctxMenuItem.current.deregister() } catch { } }
             ctxMenuItem.current = new (Spicetify as any).ContextMenu.Item(
                 'Add to Jam',
                 (uris: string[]) => addToQueue(uris),
@@ -580,13 +580,13 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 'plus2px'
             )
             ctxMenuItem.current.register()
-        } catch {}
+        } catch { }
         return () => {
             Spicetify.Player.removeEventListener('songchange', onSong)
             Spicetify.Player.removeEventListener('onplaypause', onPP)
             if (qi) clearInterval(qi)
             if (driftI) clearInterval(driftI)
-            try { ctxMenuItem.current?.deregister() } catch {}
+            try { ctxMenuItem.current?.deregister() } catch { }
         }
     }, [connected, isHost, broadcast, refreshQueue, addToQueue, hostConn])
 
@@ -614,4 +614,5 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 export const useJam = () => {
     const c = useContext(Ctx);
     if (!c) throw new Error('useJam must be inside JamProvider');
-    return c }
+    return c
+}

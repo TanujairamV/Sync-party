@@ -1,4 +1,4 @@
-import { JamConnection } from './types'
+import { JamConnection } from '../types/types'
 import { SignalingClient } from './signaling'
 
 export class WebRTCPeerManager {

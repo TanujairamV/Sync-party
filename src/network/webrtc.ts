@@ -1,4 +1,4 @@
-import { JamConnection } from './types'
+import { JamConnection } from '../types/types'
 import { WebRTCPeerManager } from './WebRTCPeerManager'
 
 export const ICE_SERVERS: RTCIceServer[] = [
@@ -233,35 +233,35 @@ export const createHost = async (
                 if (!pc) {
                     pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
                     const pcRef = pc
-                    
+
                     pcRef.onconnectionstatechange = () => {
                         console.log(
                             '[HOST PC]',
                             pcRef.connectionState
                         )
                     }
-                    
+
                     pcRef.onicegatheringstatechange = () => {
                         console.log(
                             "[HOST GATHER]",
                             pcRef.iceGatheringState
                         )
                     }
-                    
+
                     pcRef.onicecandidateerror = e => {
                         console.log(
                             "[HOST ICE ERROR]",
                             e
                         )
                     }
-                    
+
                     pcRef.oniceconnectionstatechange = () => {
                         console.log(
                             '[HOST ICE STATE]',
                             pcRef.iceConnectionState
                         )
                     }
-                    
+
                     pcRef.ondatachannel = e => {
                         e.channel.onopen = () => {
                             console.log(
@@ -279,7 +279,7 @@ export const createHost = async (
                         manager.addConnection(msg.sender, conn, pcRef)
                         onConnection(conn)
                     }
-                    
+
                     pcRef.onicecandidate = e => {
                         if (!e.candidate) {
                             console.log(
@@ -314,10 +314,10 @@ export const createHost = async (
     await manager.signaling.waitForClientId()
 
     manager.signaling.onPeerJoined(async peerId => {
-            console.log(
-                '[HOST] Creating RTC for',
-                peerId
-            )
+        console.log(
+            '[HOST] Creating RTC for',
+            peerId
+        )
         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
         pc.onconnectionstatechange = () => {
             console.log(
@@ -347,7 +347,7 @@ export const createHost = async (
             )
         }
         const channel = pc.createDataChannel('jam')
-        
+
         channel.onopen = () => {
             console.log(
                 '[HOST] DataChannel OPEN',
@@ -378,7 +378,7 @@ export const createHost = async (
                 '[HOST ICE]',
                 e.candidate.candidate
             )
-            
+
             manager.signaling.send({
                 sender: manager.signaling.clientId,
                 target: peerId,
@@ -394,10 +394,10 @@ export const createHost = async (
 
         const offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
-            console.log(
-                '[HOST] Sending offer to',
-             peerId
-         )
+        console.log(
+            '[HOST] Sending offer to',
+            peerId
+        )
 
         manager.signaling.send({
             sender: manager.signaling.clientId,
@@ -452,7 +452,7 @@ export const joinHost = async (
                 pc.connectionState
             )
         }
-        
+
         pc.onicegatheringstatechange = () => {
             console.log(
                 "[GUEST GATHER]",

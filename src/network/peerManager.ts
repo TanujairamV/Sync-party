@@ -1,7 +1,7 @@
 import { createHost, joinHost } from './webrtc'
-import { JamConnection } from './types'
+import { JamConnection } from '../types/types'
 import { Member, TrackInfo } from '../types/jam'
-import { fetchUserAsync, getTrack } from '../spotify/player'
+import { fetchUserAsync, getTrack } from '../spotify/api'
 
 type Setter<T> = (value: T | ((prev: T) => T)) => void
 

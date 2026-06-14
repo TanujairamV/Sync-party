@@ -1,6 +1,6 @@
-import { JamConnection } from './types'
+import { JamConnection } from '../types/types'
 import { TrackInfo, Member } from '../types/jam'
-import { getTrack, getQueue } from '../spotify/player'
+import { getTrack, getQueue } from '../spotify/api'
 import { calculateDrift, predictPosition, shouldHardSeek } from "../utils/sync"
 
 type RefCurrent<T> = { current: T }
@@ -138,7 +138,7 @@ export const handleCmd = (d: any, conn: JamConnection, deps: MessageHandlerDeps)
         deps.pendingQueueRestore.current = deps.queueRef.current
         deps.broadcast({ type: 'Q', queue: deps.queueRef.current })
         deps.refs.current.targetUri = d.uri
-        ;(Spicetify as any).Player.playUri(d.uri)
+            ; (Spicetify as any).Player.playUri(d.uri)
     }
 }
 
@@ -162,19 +162,19 @@ export const handlePlay = async (d: any, deps: MessageHandlerDeps) => {
         const trackChanged = curUri !== d.uri
 
         r.targetUri = d.uri
-        
+
         if (trackChanged) {
             deps.setProgress(0)
             consumeQueue(d.uri, deps)
         }
-        
+
         if (d.paused) {
             if (trackChanged) {
                 r.ignoreSync = true
                 deps.setIsPlaying(false)
-                ;(Spicetify as any).Player.playUri(d.uri).then(() => {
-                    setTimeout(() => { (Spicetify as any).Player.pause(); r.ignoreSync = false }, 150)
-                }).catch(() => { r.ignoreSync = false })
+                    ; (Spicetify as any).Player.playUri(d.uri).then(() => {
+                        setTimeout(() => { (Spicetify as any).Player.pause(); r.ignoreSync = false }, 150)
+                    }).catch(() => { r.ignoreSync = false })
             } else {
                 (Spicetify as any).Player.pause()
                 deps.setIsPlaying(false)
@@ -185,7 +185,7 @@ export const handlePlay = async (d: any, deps: MessageHandlerDeps) => {
             const drift = calculateDrift(localProgress, predicted)
 
             if (shouldHardSeek(drift)) {
-                ;(Spicetify as any).Player.seek(predicted)
+                ; (Spicetify as any).Player.seek(predicted)
             }
 
             deps.setIsPlaying(!d.paused)
@@ -204,25 +204,25 @@ export const handlePlay = async (d: any, deps: MessageHandlerDeps) => {
         } else {
             r.ignoreSync = true
             deps.setIsPlaying(true)
-            ;(Spicetify as any).Player.playUri(d.uri)
-                .then(() => {
-                    const seekMs = predictPosition(d.pos, d.ts, !d.paused)
-                    const sid = setTimeout(() => {
-                        try {
-                            const current = (Spicetify as any).Player.getProgress()
-                            const drift = calculateDrift(current, seekMs)
-                            if (shouldHardSeek(drift)) {
-                                ;(Spicetify as any).Player.seek(seekMs)
+                ; (Spicetify as any).Player.playUri(d.uri)
+                    .then(() => {
+                        const seekMs = predictPosition(d.pos, d.ts, !d.paused)
+                        const sid = setTimeout(() => {
+                            try {
+                                const current = (Spicetify as any).Player.getProgress()
+                                const drift = calculateDrift(current, seekMs)
+                                if (shouldHardSeek(drift)) {
+                                    ; (Spicetify as any).Player.seek(seekMs)
+                                }
+                            } finally {
+                                r.ignoreSync = false
                             }
-                        } finally {
-                            r.ignoreSync = false
-                        }
-                    }, Math.max(300, Date.now() - d.ts))
-                    deps.seekTimers.current.push(sid)
-                })
-                .catch(() => {
-                    r.ignoreSync = false
-                })
+                        }, Math.max(300, Date.now() - d.ts))
+                        deps.seekTimers.current.push(sid)
+                    })
+                    .catch(() => {
+                        r.ignoreSync = false
+                    })
         }
     }
     if (d.np) deps.setNowPlaying(d.np)
@@ -230,7 +230,7 @@ export const handlePlay = async (d: any, deps: MessageHandlerDeps) => {
 
 export const handlePause = (d: any, deps: MessageHandlerDeps) => {
     if (!deps.refs.current.isHost) {
-        ;(Spicetify as any).Player.pause()
+        ; (Spicetify as any).Player.pause()
         deps.setIsPlaying(false)
     }
 }
@@ -242,7 +242,7 @@ export const handleSeek = (d: any, deps: MessageHandlerDeps) => {
         const drift = calculateDrift(localProgress, predicted)
 
         if (shouldHardSeek(drift)) {
-            ;(Spicetify as any).Player.seek(predicted)
+            ; (Spicetify as any).Player.seek(predicted)
         }
     }
 }
@@ -289,16 +289,16 @@ export const handleSync = async (
         (Spicetify as any).Player.data?.item
     ) {
 
-/*
-        conn.send({
-            type: 'PLAY',
-            uri: (Spicetify as any).Player.data.item.uri,
-            pos: (Spicetify as any).Player.getProgress(),
-            ts: Date.now(),
-            np: getTrack(),
-            paused: !(Spicetify as any).Player.isPlaying()
-        })
-*/
+        /*
+                conn.send({
+                    type: 'PLAY',
+                    uri: (Spicetify as any).Player.data.item.uri,
+                    pos: (Spicetify as any).Player.getProgress(),
+                    ts: Date.now(),
+                    np: getTrack(),
+                    paused: !(Spicetify as any).Player.isPlaying()
+                })
+        */
 
         conn.send({
             type: 'Q',

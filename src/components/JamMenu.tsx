@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useJam } from '../JamContext';
-import RoomCodeInput from './RoomCodeInput';
-import { fmtTime, safeInitial } from '../utils/ui';
+import RoomCodeInput from './CodeInput';
+import { fmtTime, safeInitial } from './ui';
 
 const AVATAR_COLORS = [
     'linear-gradient(135deg,#1db954,#1ed760)',
