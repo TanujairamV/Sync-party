@@ -74,14 +74,14 @@ async function main() {
 
   if (Spicetify.Playbar) {
     playbarBtn = new Spicetify.Playbar.Button(
-      'Spicetify Jam',
+      'Sync Party',
       jamSvg,
       toggle
     );
     playbarBtn.register();
   } else if (Spicetify.Topbar) {
     topbarBtn = new (Spicetify as any).Topbar.Button(
-      'Spicetify Jam',
+      'Sync Party',
       jamSvg,
       toggle
     );

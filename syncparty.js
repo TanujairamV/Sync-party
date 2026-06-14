@@ -769,13 +769,10 @@
 
   // src/network/peerManager.ts
   var setupConn = (conn, conns, onData2, onClose) => {
-    console.log("[JAM] setupConn", conn.id);
     conn.onOpen(() => {
-      console.log("[JAM] connection open", conn.id);
       conns.current.set(conn.id, conn);
     });
     conn.onData((d) => {
-      console.log("[JAM] data received", d?.type, "from", conn.id);
       onData2(d, conn);
     });
     conn.onClose(() => {
@@ -863,6 +860,16 @@
   }
 
   // src/network/messageHandlers.ts
+  var consumeQueue = (uri, deps) => {
+    const idx = deps.queueRef.current.findIndex(
+      (t) => t.uri === uri
+    );
+    if (idx < 0)
+      return;
+    const q = deps.queueRef.current.slice(idx + 1);
+    deps.queueRef.current = q;
+    deps.setQueue(q);
+  };
   var handleJoin = async (d, conn, deps) => {
     const r = deps.refs.current;
     if (!r.isHost)
@@ -897,8 +904,19 @@
       deps.setNowPlaying(d.np);
       deps.refs.current.targetUri = d.np.uri;
     }
-    if (d.queue)
-      deps.setQueue(d.queue);
+    if (d.queue) {
+      let q = d.queue;
+      if (d.np?.uri) {
+        const idx = q.findIndex(
+          (t) => t.uri === d.np.uri
+        );
+        if (idx >= 0) {
+          q = q.slice(idx + 1);
+        }
+      }
+      deps.queueRef.current = q;
+      deps.setQueue(q);
+    }
     if (d.host)
       deps.setHostName(d.host);
     if (d.members)
@@ -936,13 +954,9 @@
     else if (d.a === "seek")
       Spicetify.Player.seek(d.pos);
     else if (d.a === "playuri") {
-      const idx = deps.queueRef.current.findIndex((t) => t.uri === d.uri);
-      if (idx >= 0) {
-        deps.pendingQueueRestore.current = deps.queueRef.current.slice(idx + 1);
-        const newQueue = deps.queueRef.current.slice(idx + 1);
-        deps.setQueue(newQueue);
-        deps.broadcast({ type: "Q", queue: newQueue });
-      }
+      consumeQueue(d.uri, deps);
+      deps.pendingQueueRestore.current = deps.queueRef.current;
+      deps.broadcast({ type: "Q", queue: deps.queueRef.current });
       deps.refs.current.targetUri = d.uri;
       Spicetify.Player.playUri(d.uri);
     }
@@ -953,13 +967,22 @@
     Spicetify.showNotification("Kicked from Jam");
   };
   var handlePlay = async (d, deps) => {
+    console.log(
+      "[GUEST] PLAY",
+      d.uri,
+      d.pos,
+      d.paused,
+      Date.now()
+    );
     const r = deps.refs.current;
     if (!r.isHost) {
       const curUri = Spicetify.Player.data?.item?.uri;
       const trackChanged = curUri !== d.uri;
       r.targetUri = d.uri;
-      if (trackChanged)
+      if (trackChanged) {
         deps.setProgress(0);
+        consumeQueue(d.uri, deps);
+      }
       if (d.paused) {
         if (trackChanged) {
           r.ignoreSync = true;
@@ -984,9 +1007,16 @@
           ;
           Spicetify.Player.seek(predicted);
         }
-        deps.setIsPlaying(true);
-        if (!Spicetify.Player.isPlaying())
-          Spicetify.Player.play();
+        deps.setIsPlaying(!d.paused);
+        if (d.paused) {
+          if (Spicetify.Player.isPlaying()) {
+            Spicetify.Player.pause();
+          }
+        } else {
+          if (!Spicetify.Player.isPlaying()) {
+            Spicetify.Player.play();
+          }
+        }
       } else {
         r.ignoreSync = true;
         deps.setIsPlaying(true);
@@ -1049,6 +1079,7 @@
       deps.removeFromQueue(d.uri, d.uid);
   };
   var handleQ = (d, deps) => {
+    deps.queueRef.current = d.queue;
     deps.setQueue(d.queue);
   };
   var handlePing = (d, conn, deps) => {
@@ -1057,15 +1088,11 @@
   var handlePong = (d, deps) => {
     deps.setPing(Date.now() - d.ts);
   };
-  var handleSync = (d, conn, deps) => {
+  var handleSync = async (d, conn, deps) => {
     if (deps.refs.current.isHost && Spicetify.Player.data?.item) {
       conn.send({
-        type: "PLAY",
-        uri: Spicetify.Player.data.item.uri,
-        pos: Spicetify.Player.getProgress(),
-        ts: Date.now(),
-        np: getTrack(),
-        paused: !Spicetify.Player.isPlaying()
+        type: "Q",
+        queue: await getQueue()
       });
     }
   };
@@ -1105,7 +1132,7 @@
       case "PONG":
         return handlePong(d, deps);
       case "SYNC":
-        return handleSync(d, conn, deps);
+        return await handleSync(d, conn, deps);
     }
   };
 
@@ -1125,7 +1152,6 @@
     const [progress, setProgress] = (0, import_react.useState)(0);
     const [duration, setDuration] = (0, import_react.useState)(0);
     const [ping, setPing] = (0, import_react.useState)(-1);
-    const [updateAvailable, setUpdateAvailable] = (0, import_react.useState)(false);
     const peerRef = (0, import_react.useRef)(null);
     const conns = (0, import_react.useRef)(/* @__PURE__ */ new Map());
     const memberRegistry = (0, import_react.useRef)(/* @__PURE__ */ new Map());
@@ -1164,18 +1190,6 @@
       userPromise.current.then((u) => {
         cachedUser.current = u;
       });
-      const checkUpdate = async () => {
-        try {
-          const res = await fetch("https://raw.githubusercontent.com/TanujairamV/spicetify-jam/main/manifest.json");
-          const data = await res.json();
-          if (data.version && data.version !== "1.0.0") {
-            setUpdateAvailable(true);
-            console.log("[Spicetify Jam] Update available:", data.version);
-          }
-        } catch {
-        }
-      };
-      checkUpdate();
     }, []);
     const broadcast = (0, import_react.useCallback)((d) => conns.current.forEach((c) => c.open && c.send(d)), []);
     const hostConn = (0, import_react.useCallback)(() => conns.current.get(refs.current.jamId) || Array.from(conns.current.values())[0], []);
@@ -1235,6 +1249,7 @@
         const u = [...p];
         const [m] = u.splice(from, 1);
         u.splice(to, 0, m);
+        queueRef.current = u;
         broadcast({ type: "Q", queue: u });
         return u;
       });
@@ -1249,23 +1264,33 @@
           c.send({ type: "CMD", a: "seek", pos: ms });
       }
     }, [broadcast, hostConn]);
+    const consumeLocalQueue = (0, import_react.useCallback)(
+      (uri) => {
+        const idx = queueRef.current.findIndex((t) => t.uri === uri);
+        if (idx < 0)
+          return;
+        const q = queueRef.current.slice(idx + 1);
+        pendingQueueRestore.current = q;
+        queueRef.current = q;
+        setQueue(q);
+        broadcast({
+          type: "Q",
+          queue: q
+        });
+      },
+      [broadcast]
+    );
     const jumpToTrack = (0, import_react.useCallback)((uri) => {
       if (refs.current.isHost) {
         refs.current.targetUri = uri;
-        const idx = queueRef.current.findIndex((t) => t.uri === uri);
-        if (idx >= 0) {
-          pendingQueueRestore.current = queueRef.current.slice(idx + 1);
-          const newQueue = queueRef.current.slice(idx + 1);
-          setQueue(newQueue);
-          broadcast({ type: "Q", queue: newQueue });
-        }
+        consumeLocalQueue(uri);
         Spicetify.Player.playUri(uri);
       } else if (refs.current.guestControls) {
         const c = hostConn();
         if (c?.open)
           c.send({ type: "CMD", a: "playuri", uri });
       }
-    }, [hostConn, broadcast]);
+    }, [hostConn, consumeLocalQueue]);
     const toggleGuestControls = () => {
       if (!refs.current.isHost)
         return;
@@ -1276,7 +1301,6 @@
     const play = () => {
       if (refs.current.isHost) {
         Spicetify.Player.play();
-        setIsPlaying(true);
       } else if (refs.current.guestControls) {
         const c = hostConn();
         if (c?.open)
@@ -1286,7 +1310,6 @@
     const pause = () => {
       if (refs.current.isHost) {
         Spicetify.Player.pause();
-        setIsPlaying(false);
       } else if (refs.current.guestControls) {
         const c = hostConn();
         if (c?.open)
@@ -1465,9 +1488,11 @@
       const id = setInterval(() => {
         if (refs.current.isHost) {
           try {
-            setIsPlaying(Spicetify.Player.isPlaying());
             setProgress(Spicetify.Player.getProgress());
-            setDuration(Spicetify.Player.getDuration());
+            const d = Spicetify.Player.getDuration();
+            if (d !== duration) {
+              setDuration(d);
+            }
           } catch {
           }
         } else if (refs.current.connected) {
@@ -1528,12 +1553,27 @@
         songDebounce.current = setTimeout(() => {
           const uri = Spicetify.Player.data?.item?.uri;
           if (refs.current.isHost) {
+            console.log(
+              "[HOST] Song change",
+              {
+                uri,
+                playing: Spicetify.Player.isPlaying(),
+                time: Date.now()
+              }
+            );
             const t = getTrack();
             if (t)
               setNowPlaying(t);
             refs.current.targetUri = uri || null;
             const hostPaused = !Spicetify.Player.isPlaying();
-            broadcast({ type: "PLAY", uri: uri || "", pos: 0, ts: Date.now(), np: t, paused: hostPaused });
+            broadcast({
+              type: "PLAY",
+              uri: uri || "",
+              pos: Spicetify.Player.getProgress(),
+              ts: Date.now(),
+              np: t,
+              paused: hostPaused
+            });
             if (pendingQueueRestore.current.length > 0) {
               const restore = pendingQueueRestore.current;
               pendingQueueRestore.current = [];
@@ -1562,6 +1602,14 @@
                 if (c?.open)
                   c.send({ type: "CMD", a: "playuri", uri });
               } else {
+                console.log(
+                  "[GUEST] Song change",
+                  {
+                    uri,
+                    playing: Spicetify.Player.isPlaying(),
+                    time: Date.now()
+                  }
+                );
                 refs.current.ignoreSync = true;
                 Spicetify.Player.playUri(refs.current.targetUri).catch(() => {
                   refs.current.ignoreSync = false;
@@ -1582,15 +1630,21 @@
         if (refs.current.isHost) {
           const pos = Spicetify.Player.getProgress();
           const dur = Spicetify.Player.getDuration();
-          broadcast({ type: "PS", p: playing, pos, dur });
-          if (playing) {
-            broadcast({ type: "PLAY", uri: refs.current.targetUri || "", pos, ts: Date.now(), np: getTrack(), paused: false });
-          } else {
-            broadcast({
-              type: "PAUSE",
-              pos: Spicetify.Player.getProgress(),
-              ts: Date.now()
-            });
+          broadcast({
+            type: "PS",
+            p: playing,
+            pos,
+            dur
+          });
+          if (!playing) {
+            const currentUri = Spicetify.Player.data?.item?.uri;
+            if (currentUri && currentUri === refs.current.targerUri) {
+              broadcast({
+                type: "PAUSE",
+                pos,
+                ts: Date.now()
+              });
+            }
           }
         } else {
           if (playing) {
@@ -1697,7 +1751,6 @@
         progress,
         duration,
         ping,
-        updateAvailable,
         startJam: startJam2,
         joinJam: joinJam2,
         leaveJam,
@@ -1788,6 +1841,7 @@
           nextChars[index] = "";
           updateCode(nextChars, index);
         } else if (index > 0) {
+          nextChars[index - 1] = "";
           updateCode(nextChars, index - 1);
         }
         return;
@@ -1852,7 +1906,6 @@
       onChange: handleChange(index),
       onKeyDown: handleKeyDown(index),
       onPaste: handlePaste(index),
-      onFocus: (event) => event.target.select(),
       "aria-label": `Room code character ${index + 1}`
     }))));
   };
@@ -2209,19 +2262,14 @@
       className: "jam-logo-icon"
     }, I.jam), /* @__PURE__ */ import_react7.default.createElement("div", null, /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-title"
-    }, "Social Jam"), /* @__PURE__ */ import_react7.default.createElement("div", {
+    }, "Sync Party"), /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-subtitle"
     }, "Listen together"))), /* @__PURE__ */ import_react7.default.createElement("button", {
       className: "jam-icon-btn",
       onClick: onClose
     }, I.close)), /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-body"
-    }, j.updateAvailable && /* @__PURE__ */ import_react7.default.createElement("div", {
-      className: "jam-error jam-update-banner",
-      onClick: () => window.open("https://github.com/TanujairamV/spicetify-jam", "_blank")
-    }, /* @__PURE__ */ import_react7.default.createElement("span", {
-      className: "jam-update-text"
-    }, " \u2728 Update Available! Click to view ")), /* @__PURE__ */ import_react7.default.createElement("div", {
+    }, /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-hero"
     }, /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-hero-icon"
@@ -2427,7 +2475,7 @@
       className: "jam-logo-icon active"
     }, I.jam), /* @__PURE__ */ import_react7.default.createElement("div", null, /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-title"
-    }, "Jam"), /* @__PURE__ */ import_react7.default.createElement("div", {
+    }, "Sync Party"), /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-subtitle"
     }, j.isHost ? "Hosting" : j.hostName ? `With ${j.hostName}` : "Connected"))), /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-header-right"
@@ -2438,12 +2486,7 @@
       onClick: onClose
     }, I.close))), /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-body scrollable"
-    }, j.updateAvailable && /* @__PURE__ */ import_react7.default.createElement("div", {
-      className: "jam-error jam-update-banner",
-      onClick: () => window.open("https://github.com/TanujairamV/spicetify-jam", "_blank")
-    }, /* @__PURE__ */ import_react7.default.createElement("span", {
-      className: "jam-update-text"
-    }, "\u2728 Update Available! Click to view")), /* @__PURE__ */ import_react7.default.createElement("div", {
+    }, /* @__PURE__ */ import_react7.default.createElement("div", {
       className: "jam-live-badge"
     }, /* @__PURE__ */ import_react7.default.createElement("span", {
       className: "jam-live-dot"
@@ -2511,14 +2554,14 @@
     let topbarBtn = null;
     if (Spicetify.Playbar) {
       playbarBtn = new Spicetify.Playbar.Button(
-        "Spicetify Jam",
+        "Sync Party",
         jamSvg,
         toggle
       );
       playbarBtn.register();
     } else if (Spicetify.Topbar) {
       topbarBtn = new Spicetify.Topbar.Button(
-        "Spicetify Jam",
+        "Sync Party",
         jamSvg,
         toggle
       );
@@ -2556,10 +2599,7 @@
       var el = document.createElement('style');
       el.id = `syncparty`;
       el.textContent = (String.raw`
-  @import "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap";
-@import "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap";
-
-/* ../../../../tmp/tmp-120345-QcKTGyw0Fun5/19ec15281060/styles.css */
+  /* ../../../../tmp/tmp-35677-RzPi9SHLHKBU/19ec5de41db0/styles.css */
 :root {
   --jam-green: #1db954;
   --jam-green-hover: #1ed760;
@@ -3127,10 +3167,12 @@
   gap: 8px;
 }
 .jam-id-code {
+  flex: 1;
+  text-align: center;
   font-family: "Courier New", monospace;
   font-size: 20px;
   font-weight: 900;
-  color: #1db954;
+  color: rgba(255, 255, 255, 0.9);
   letter-spacing: 5px;
 }
 .jam-share-row {
@@ -3292,20 +3334,6 @@
 }
 .jam-progress-rail.readonly {
   cursor: default;
-}
-.jam-update-banner {
-  background: rgba(29, 185, 84, 0.1);
-  border-color: #1db954;
-  color: #1db954;
-  cursor: pointer;
-  margin-bottom: 10px;
-  transition: background 0.15s ease;
-}
-.jam-update-banner:hover {
-  background: rgba(29, 185, 84, 0.16);
-}
-.jam-update-text {
-  font-size: 14px;
 }
 .jam-divider {
   display: flex;

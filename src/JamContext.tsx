@@ -50,18 +50,6 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useEffect(() => {
         userPromise.current = fetchUserAsync()
         userPromise.current.then(u => { cachedUser.current = u })
-
-        const checkUpdate = async () => {
-            try {
-                const res = await fetch('https://raw.githubusercontent.com/TanujairamV/spicetify-jam/main/manifest.json')
-                const data = await res.json()
-                if (data.version && data.version !== '1.0.0') {
-                    setUpdateAvailable(true)
-                    console.log('[Spicetify Jam] Update available:', data.version)
-                }
-            } catch {}
-        }
-        checkUpdate()
     }, [])
 
     const broadcast = useCallback((d: any) => conns.current.forEach(c => c.open && c.send(d)), [])
@@ -613,7 +601,7 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return (
         <Ctx.Provider value={{
             isHost, jamId, members, connected, error, nowPlaying, hostName, queue,
-            guestControls, isPlaying, progress, duration, ping, updateAvailable,
+            guestControls, isPlaying, progress, duration, ping,
             startJam, joinJam, leaveJam, addToQueue, removeFromQueue,
             moveInQueue, requestSync, jumpToTrack, seekTo, kickMember,
             toggleGuestControls, play, pause, next, prev

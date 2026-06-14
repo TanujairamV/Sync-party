@@ -27,7 +27,6 @@ export interface JamState {
     progress: number
     duration: number
     ping: number
-    updateAvailable: boolean
     startJam: () => any
     joinJam: (id: string) => any
     leaveJam: () => void

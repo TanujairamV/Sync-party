@@ -40,20 +40,13 @@ const JamMenu: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     <div className="jam-header-left">
                         <div className="jam-logo-icon">{I.jam}</div>
                         <div>
-                            <div className="jam-title">Social Jam</div>
+                            <div className="jam-title">Sync Party</div>
                             <div className="jam-subtitle">Listen together</div>
                         </div>
                     </div>
                     <button className="jam-icon-btn" onClick={onClose}>{I.close}</button>
                 </div>
                 <div className="jam-body">
-                    {j.updateAvailable && (
-                        <div className="jam-error jam-update-banner"
-                            onClick={() => window.open('https://github.com/TanujairamV/spicetify-jam', '_blank')}>
-
-                            <span className="jam-update-text"> ✨ Update Available! Click to view </span>
-                        </div>
-                    )}
                     <div className="jam-hero">
                         <div className="jam-hero-icon">{I.jam}</div>
                         <h2 className="jam-hero-title">Start a new Jam</h2>
@@ -226,7 +219,7 @@ const JamMenu: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     <div className="jam-header-left">
                         <div className="jam-logo-icon active">{I.jam}</div>
                         <div>
-                            <div className="jam-title">Jam</div>
+                            <div className="jam-title">Sync Party</div>
                             <div className="jam-subtitle">
                                 {j.isHost
                                     ? 'Hosting'
@@ -247,13 +240,6 @@ const JamMenu: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
 
                 <div className="jam-body scrollable">
-                    {j.updateAvailable && (
-                        <div className="jam-error jam-update-banner"
-                            onClick={() => window.open('https://github.com/TanujairamV/spicetify-jam', '_blank')}>
-                            <span className="jam-update-text">✨ Update Available! Click to view</span>
-                        </div>
-                    )}
-
                     <div className="jam-live-badge">
                         <span className="jam-live-dot"/>
                         <span>Session Active</span>

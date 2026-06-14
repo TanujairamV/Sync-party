@@ -387,23 +387,6 @@
     cursor: default;
 }
 
-.jam-update-banner {
-    background: rgba(29, 185, 84, 0.1);
-    border-color: #1db954;
-    color: #1db954;
-    cursor: pointer;
-    margin-bottom: 10px;
-    transition: background 0.15s ease;
-}
-
-.jam-update-banner:hover {
-    background: rgba(29, 185, 84, 0.16);
-}
-
-.jam-update-text {
-    font-size: 14px;
-}
-
 .jam-divider {
     display: flex;
     align-items: center;
