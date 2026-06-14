@@ -22,7 +22,6 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [progress, setProgress] = useState(0)
     const [duration, setDuration] = useState(0)
     const [ping, setPing] = useState(-1)
-    const [updateAvailable, setUpdateAvailable] = useState(false)
 
     const peerRef = useRef<WebRTCPeerManager | null>(null)
 
