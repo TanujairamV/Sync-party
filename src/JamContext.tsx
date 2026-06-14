@@ -511,11 +511,17 @@ export const JamProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 })
 
                 if (!playing) {
-                    broadcast({
-                        type: 'PAUSE',
-                        pos,
-                        ts: Date.now()
-                    })
+                    const currentUri = Spicetify.Player.data?.item?.uri
+                    if (
+                        currentUri &&
+                        currentUri === refs.current.targerUri
+                    ) {
+                        broadcast({
+                            type: 'PAUSE',
+                            pos,
+                            ts: Date.now()
+                        })
+                    }
                 }
 
             } else {
