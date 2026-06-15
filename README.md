@@ -45,26 +45,26 @@ winget install --id Git.Git -e --source winget
 winget install OpenJS.NodeJS.LTS
 Set-ExecutionPolicy RemoteSigned -Scope Current
 
-git clone https://github.com/TanujairamV/spicetify-jam
-cd spicetify-jam
+git clone https://github.com/TanujairamV/Sync-party
+cd Sync-party
 
 npm install
 npm run build
 
-spicetify config extensions spicetify-jam.js
+spicetify config extensions syncparty.js
 spicetify apply
 ```
 
 ### Linux / macOS
 
 ```bash
-git clone https://github.com/TanujairamV/spicetify-jam
-cd spicetify-jam
+git clone https://github.com/TanujairamV/Sync-party
+cd Sync-party
 
 npm install
 npm run build
 
-spicetify config extensions spicetify-jam.js
+spicetify config extensions syncparty.js
 spicetify apply
 ```
 
