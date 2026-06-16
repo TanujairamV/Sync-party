@@ -441,6 +441,9 @@ export const joinHost = async (
         pendingIceCandidates.delete(peerId)
     }
 
+    let connected = false
+    let connectedResolve: (() => void) | null = null
+
     const createGuestConnection = (
         id: string
     ) => {
@@ -501,18 +504,21 @@ export const joinHost = async (
                 '[GUEST] DataChannel received'
             )
 
-            e.channel.onopen = () => {
+            deferred.attach(e.channel)
+
+            deferred.onOpen(() => {
                 console.log(
                     '[GUEST] DataChannel OPEN'
                 )
-            }
+                connected = true
+                connectedResolve?.()
+            })
 
             e.channel.onclose = () => {
                 console.log(
                     '[GUEST] DataChannel CLOSE'
                 )
-            }
-            deferred.attach(e.channel)
+            } 
         }
 
         deferred.onClose(() => {
@@ -579,6 +585,24 @@ export const joinHost = async (
     )
 
     await manager.signaling.waitForClientId()
+
+    await new Promise<void>((resolve, reject) => {
+        if (connected) {
+            resolve()
+            return
+        }
+
+        connectedResolve = () => {
+            clearTimeout(timeout)
+            connectedResolve = null
+            resolve()
+        }
+
+        const timeout = setTimeout(() => {
+            connectedResolve = null
+            reject(new Error("Host unavailable"))
+        }, 5000)
+})
 
     return manager
 }
